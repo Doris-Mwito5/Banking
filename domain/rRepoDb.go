@@ -48,6 +48,29 @@ func (d customerRepoDb) FindAllCustomers() ([]Customer, error) {
 	return customers, nil
 }
 
+func (d customerRepoDb) GetCustomerByID(ID int64) (*Customer, error) {
+	getCustomerByIdSQL := `SELECT id, name, date_of_birth, city, zip_code, status FROM customers WHERE id = $1`
+
+	row := d.db.QueryRow(
+		getCustomerByIdSQL,
+		ID,
+	)
+	var c Customer
+	err := row.Scan(
+		&c.ID,
+		&c.Name,
+		&c.DateOfBirth,
+		&c.City,
+		&c.ZipCode,
+		&c.Status,
+	)
+	if err != nil {
+		log.Printf("scanning row error: %v", err)
+		return nil, err
+	}
+	return &c, nil
+}
+
 func NewcustomerRepoDb() customerRepoDb {
 	//db connection
 	connStr := "user=root dbname=postgres sslmode=disable password=random123 host=localhost port=5434"

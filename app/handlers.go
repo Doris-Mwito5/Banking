@@ -1,9 +1,13 @@
 package app
 
 import (
-	"github/Doris-Mwito5/banking/service"
 	"encoding/json"
+	"fmt"
+	"github/Doris-Mwito5/banking/service"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type Customer struct {
@@ -18,19 +22,31 @@ type CustomerHandler struct {
 }
 
 func (ch *CustomerHandler) getAllCustomers(w http.ResponseWriter, r *http.Request) {
-	// customers := []Customer{
-	// 	{Name: "Doris", City: "Nairobi", ZipCode: "23098"},
-	// 	{Name: "Alex", City: "Austria", ZipCode: "45890"},
-	// }
-
 	customers, _ := ch.service.GetAllCustomers()
 	//setting the content type to json
 	w.Header().Add("Content-Type", "application/json")
-	//setting the content type to xml
-	// w.Header().Add("Content-Type", "application/xml")
 	//encoding the customers data to json
 	json.NewEncoder(w).Encode(customers)
-	//encoding the customers data to xml
-	// xml.NewEncoder(w).Encode(customers)
 
+}
+
+func (ch *CustomerHandler) getCustomerByID(w http.ResponseWriter, r *http.Request) {
+	//fetch the customer id
+	vars := mux.Vars(r)
+	idStr := vars["customer_id"]
+
+	// Convert ID to int64
+	ID, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid customer ID", http.StatusBadRequest)
+		return
+	}
+	customer, err := ch.service.GetCustomerByID(ID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "%s", err.Error())
+	} else {
+		w.Header().Add("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(customer)
+	}
 }

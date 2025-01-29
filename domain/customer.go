@@ -1,7 +1,7 @@
 package domain
 
 type Customer struct {
-	ID int
+	ID int64
 	Name string
 	DateOfBirth string
 	City string
@@ -13,6 +13,7 @@ type Customer struct {
 
 type CustomerRepository interface {
 	FindAllCustomers() ([]Customer, error)
+	GetCustomerByID(ID int64) (*Customer, error)
 }
 
 //define the adapter/stub
