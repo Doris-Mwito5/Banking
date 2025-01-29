@@ -16,7 +16,8 @@ func Start() {
 	// mux := http.NewServeMux()
 	mux := mux.NewRouter()
 	//wiring
-	ch := CustomerHandler{service: service.NewCustomerService(domain.NewcustomerRepository())}
+	// ch := CustomerHandler{service: service.NewCustomerService(domain.NewcustomerRepository())}
+	ch := CustomerHandler{service: service.NewCustomerService(domain.NewcustomerRepoDb())}
 
 	//define routes
 	mux.HandleFunc("/customers", ch.getAllCustomers)
