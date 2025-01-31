@@ -1,102 +1,16 @@
-version: '3.7'
-
+version: "3.8"
 services:
-  ph-auth-grpc:
-    build:
-      context: .
-      args:
-      - PH_ACCESS_TOKEN=${PH_ACCESS_TOKEN}
+  postgres:
+    image: postgres:17-alpine
+    container_name: postgres
     ports:
-      - '8083:8083'
-    env_file:
-      - .env
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: random123
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # This line ensures data persists
 
-  ph-backend:
-    build:
-      context: ../ph-backend
-      args:
-      - PH_ACCESS_TOKEN=${PH_ACCESS_TOKEN}
-    ports:
-      - '8000:8000'
-    env_file:
-      - .env
-
-  ph-listener:
-    build: 
-      context: ../ph-listener
-      args:
-      - PH_ACCESS_TOKEN=${PH_ACCESS_TOKEN}
-    ports:
-      - "8085:8085"
-    deploy:
-      mode: replicated
-      replicas: 1
-    env_file:
-      - .env
-  
-  ph-conveyer:
-    build: 
-      context: ../ph-conveyer
-    # image: "payherokenya/ph-conveyer:v2023.04.02.12.53"
-      args:
-        - PH_ACCESS_TOKEN=${PH_ACCESS_TOKEN}
-    ports:
-      - "8086:8086"
-    deploy:
-      mode: replicated
-      replicas: 1
-    env_file:
-      - .env
-  
-  ph-whatsapp:
-    build: 
-      context: ../ph-whatsapp
-      dockerfile: ph-whatsapp.dockerfile
-      args:
-      - PH_ACCESS_TOKEN=${PH_ACCESS_TOKEN}
-    ports:
-      - "8087:8087"
-    deploy:
-      mode: replicated
-      replicas: 1
-    env_file:
-      - .env
-
-  # postgres:
-  #   image: postgres:12
-  #   ports:
-  #     - 5432:5432
-  #   volumes:
-  #     - ./data/postgres:/var/lib/postgresql/data
-  #   environment:
-  #     - POSTGRES_DB=test
-  #     - POSTGRES_PASSWORD=test
-  #     - POSTGRES_USER=test
-
-  
-  # postgres:
-  #   image: 'postgres:14.0'
-  #   ports:
-  #     - "5432:5432"
-  #   restart: always
-  #   deploy:
-  #     mode: replicated
-  #     replicas: 1
-  #   env_file:
-  #     - .env.db
-  #   container_name: postgres-db
-  #   volumes:
-  #     - ./data/postgres/:/var/lib/postgresql/data/
-
-  # pgadmin:
-  #   container_name: pgadmin
-  #   image: dpage/pgadmin4
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - 5050:80
-  #   # depends_on:
-  #   #   - postgres
-
-# networks:
-#   redis-net:
+volumes:
+  postgres_data:  # Defines the volume

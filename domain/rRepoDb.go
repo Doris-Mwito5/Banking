@@ -4,51 +4,42 @@ import (
 	"database/sql"
 	"log"
 
+	"github/Doris-Mwito5/banking/errors"
+	"github/Doris-Mwito5/banking/logger"
+
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
-type customerRepoDb struct{
-	db *sql.DB
+
+type customerRepoDb struct {
+	db *sqlx.DB
 }
 
-func (d customerRepoDb) FindAllCustomers() ([]Customer, error) {
-	
+func (d customerRepoDb) FindAllCustomers() ([]Customer, *errors.AppError) {
+
 	//sql query to get customers
 	FindAllCustomersSQL := `SELECT id, name, date_of_birth, city, zip_code, status FROM customers`
 	//query the sql via the db client
 
 	rows, err := d.db.Query(FindAllCustomersSQL)
 	if err != nil {
-		log.Printf("error querying customers: %v", err)
-		return nil, err
+		logger.Error("error querying customers")
+		return nil, errors.NewUnexpectedError("Unexpected database error")
 	}
+	
 	//if no err, loop through rows
 
 	customers := make([]Customer, 0)
-	for rows.Next() {
-		//create a var for storing the queried data
-		var c Customer
-		//retrieve data using scan method
-		err := rows.Scan(
-			&c.ID,
-			&c.Name,
-			&c.DateOfBirth,
-			&c.City,
-			&c.ZipCode,
-			&c.Status,
-		)
-		if err != nil {
-			log.Printf("scan row err: %v", err)
-			return nil, err
-		}
-		defer rows.Close()
-		//if no err, we will first customer and we will store them in the named var below
-		customers = append(customers, c)
+	err = sqlx.StructScan(rows, &customers)
+	if err != nil {
+		logger.Error("scan row err: %v")
+		return nil, errors.NewUnexpectedError("Unexpected database error")
 	}
 	//if no err return the list of customers
 	return customers, nil
 }
 
-func (d customerRepoDb) GetCustomerByID(ID int64) (*Customer, error) {
+func (d customerRepoDb) GetCustomerByID(ID string) (*Customer, *errors.AppError) {
 	getCustomerByIdSQL := `SELECT id, name, date_of_birth, city, zip_code, status FROM customers WHERE id = $1`
 
 	row := d.db.QueryRow(
@@ -65,8 +56,13 @@ func (d customerRepoDb) GetCustomerByID(ID int64) (*Customer, error) {
 		&c.Status,
 	)
 	if err != nil {
-		log.Printf("scanning row error: %v", err)
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, errors.NewNotFoundError("Customer Not found")
+		} else {
+			logger.Error("scanning row error: %v")
+			return nil, errors.NewUnexpectedError("Unexpected database error")
+		}
+
 	}
 	return &c, nil
 }
@@ -74,7 +70,7 @@ func (d customerRepoDb) GetCustomerByID(ID int64) (*Customer, error) {
 func NewcustomerRepoDb() customerRepoDb {
 	//db connection
 	connStr := "user=root dbname=postgres sslmode=disable password=random123 host=localhost port=5434"
-	db, err := sql.Open("postgres", connStr)
+	db, err := sqlx.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
