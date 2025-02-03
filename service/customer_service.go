@@ -2,12 +2,13 @@ package service
 
 import (
 	"github/Doris-Mwito5/banking/domain"
+	"github/Doris-Mwito5/banking/dto"
 	errors "github/Doris-Mwito5/banking/errors"
 )
 
 type CustomerService interface {
-	GetAllCustomers() ([]domain.Customer, *errors.AppError)
-	GetCustomerByID(ID string) (*domain.Customer, *errors.AppError)
+	GetAllCustomers() ([]dto.CustomerResponse, *errors.AppError)
+	GetCustomerByID(ID string) (*dto.CustomerResponse, *errors.AppError)
 }
 
 // implement  the primary port(business logic)
@@ -21,10 +22,23 @@ func NewCustomerService(repository domain.CustomerRepository) customerService {
 	return customerService{repo: repository}
 }
 
-func (s customerService) GetAllCustomers() ([]domain.Customer, *errors.AppError) {
-	return s.repo.FindAllCustomers()
+func (s customerService) GetAllCustomers() ([]dto.CustomerResponse, *errors.AppError) {
+	c, err := s.repo.FindAllCustomers()
+	if err != nil {
+		return nil, err
+	}
+	var response []dto.CustomerResponse
+	for _, c := range c {
+		response = append(response, c.ToDto())
+	}
+	return response, nil
 }
 
-func (s customerService) GetCustomerByID(ID string) (*domain.Customer, *errors.AppError) {
-	return s.repo.GetCustomerByID(ID)
+func (s customerService) GetCustomerByID(ID string) (*dto.CustomerResponse, *errors.AppError) {
+	c, err := s.repo.GetCustomerByID(ID)
+	if err != nil {
+		return nil, err
+	}
+	response := c.ToDto()
+	return &response, nil
 }

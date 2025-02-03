@@ -7,12 +7,11 @@ import (
 	"github/Doris-Mwito5/banking/errors"
 	"github/Doris-Mwito5/banking/logger"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 type customerRepoDb struct {
-	db *sqlx.DB
+	db *sql.DB
 }
 
 func (d customerRepoDb) FindAllCustomers() ([]Customer, *errors.AppError) {
@@ -26,14 +25,23 @@ func (d customerRepoDb) FindAllCustomers() ([]Customer, *errors.AppError) {
 		logger.Error("error querying customers")
 		return nil, errors.NewUnexpectedError("Unexpected database error")
 	}
-	
-	//if no err, loop through rows
-
+	defer rows.Close()
 	customers := make([]Customer, 0)
-	err = sqlx.StructScan(rows, &customers)
-	if err != nil {
-		logger.Error("scan row err: %v")
-		return nil, errors.NewUnexpectedError("Unexpected database error")
+	for rows.Next() {
+		var c Customer
+		err := rows.Scan(
+			&c.ID,
+			&c.Name,
+			&c.DateOfBirth,
+			&c.City,
+			&c.ZipCode,
+			&c.Status,
+		)
+		if err != nil {
+			logger.Error("scan row err: %v")
+			return nil, errors.NewUnexpectedError("Unexpected database error")
+		}
+		customers = append(customers, c)
 	}
 	//if no err return the list of customers
 	return customers, nil
@@ -70,7 +78,7 @@ func (d customerRepoDb) GetCustomerByID(ID string) (*Customer, *errors.AppError)
 func NewcustomerRepoDb() customerRepoDb {
 	//db connection
 	connStr := "user=root dbname=postgres sslmode=disable password=random123 host=localhost port=5434"
-	db, err := sqlx.Open("postgres", connStr)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
