@@ -8,7 +8,7 @@ import (
 
 type Account struct {
 	ID          int64     `json:"id"`
-	CustomerID  int64     `json:"customer_id"`
+	CustomerID  string     `json:"customer_id"`
 	AccountType string    `json:"account_type"`
 	CreatedAt   time.Time `json:"created_at"`
 	Status      string    `json:"status"`
@@ -34,7 +34,7 @@ func (a Account) ToDto() dto.Account {
 
 type AccountRepository interface {
 	GetAllAccounts() ([]Account, *errors.AppError)
-	// GetAllAccountsByID(ID int64) (*Account, *errors.AppError)
+	Save(Account) (*Account, *errors.AppError)
 }
 
 type accountRepository struct {

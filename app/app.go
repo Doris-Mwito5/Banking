@@ -26,6 +26,8 @@ func Start() {
 	mux.HandleFunc("/customers", ch.getAllCustomers)
 	mux.HandleFunc("/customers/{customer_id:[0-9]+}", ch.getCustomerByID)
 	mux.HandleFunc("/accounts", ah.GetAllAccounts)
+	mux.HandleFunc("/account", ah.CreateAccount)
+
 	//starting the server
 	address := os.Getenv("SERVER_ADDRESS")
 	port := os.Getenv("SERVER_PORT")

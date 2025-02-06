@@ -52,3 +52,28 @@ func (d *accountRepoDb) GetAllAccounts() ([]Account, *errors.AppError) {
 	}
 	return accounts, nil
 }
+
+func (d *accountRepoDb) Save(a Account) (*Account, *errors.AppError) {
+    createAccountSQL := `INSERT INTO accounts (customer_id, account_type, created_at, status) 
+                         VALUES($1, $2, $3, $4) RETURNING id`
+
+    // Execute the SQL query and scan the resulting id into a.ID
+    err := d.db.QueryRow(
+        createAccountSQL,
+        a.CustomerID,
+        a.AccountType,
+        a.CreatedAt,
+        a.Status,
+    ).Scan(&a.ID)
+
+    // Check for errors and log them with more details
+    if err != nil {
+        // Log the actual error from the database for better debugging
+        logger.Error("error creating account: %+v")
+        return nil, errors.NewUnexpectedError("failed to create account: " + err.Error())
+    }
+
+    // Return the account with the assigned ID
+    return &a, nil
+}
+
