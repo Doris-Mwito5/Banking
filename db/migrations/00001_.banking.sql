@@ -17,32 +17,34 @@ INSERT INTO customers VALUES
 CREATE TABLE "accounts" (
     id SERIAL PRIMARY KEY,
     customer_id BIGINT REFERENCES customers(id),
+    pin VARCHAR NOT NULL,
     account_type VARCHAR(10) NOT NULL,
+    amount FLOAT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT clock_timestamp(),
     status BIGINT NOT NULL DEFAULT '1'
 );
 
 INSERT INTO accounts VALUES
-(01, 100, 'Saving', '2025-01-22 10:25:09', 1 ),
-(02, 101, 'Deposits', '2025-01-05 03:09:09', 1 ),
-(03, 102, 'Saving', '2025-01-10 09:34:12', 0 ),
-(04, 103, 'Business', '2024-12-13 01:45:50', 1 ),
-(05, 104, 'Saving', '2025-01-22 02:18:27', 1 );
+(1, 100, '1025', 'Saving', 500000, '2025-01-22 10:25:09', 1 ),
+(2, 101, '3078', 'Deposits', 34578, '2025-01-05 03:09:09', 1 ),
+(3, 102, '5608', 'Saving', 320000, '2025-01-10 09:34:12', 0 ),
+(4, 103, '3905', 'Business', 134500, '2024-12-13 01:45:50', 1 ),
+(5, 104, '2189', 'Saving', 310500, '2025-01-22 02:18:27', 1 );
 
 CREATE TABLE "transactions" (
     id SERIAL PRIMARY KEY,
+    customer_id BIGINT REFERENCES customers(id),
     account_id BIGINT NOT NULL REFERENCES accounts(id),
     amount FLOAT NOT NULL,
-    created_at TIMESTAMP NOT NULL  DEFAULT clock_timestamp(),
-    updated_at TIMESTAMP NOT NULL  DEFAULT clock_timestamp()
-);
+    transaction_type VARCHAR NOT NULL,
+    created_at TIMESTAMP NOT NULL  DEFAULT clock_timestamp());
 
 INSERT INTO transactions VALUES
-(2000, 01, 40000, '2025-01-22 10:56:09'),
-(2001, 02, 450000, '2025-01-06 3:00:34'),
-(2002, 03, 3400, '2025-01-11 04:02:34'),
-(2003, 04, 234500, '2025-01-22 08:57:23'),
-(2004, 05, 21000, '2025-01-20 03:21:04');
+(2000, 1, 40000, 'deposit', '2025-01-22 10:56:09'),
+(2001, 2, 450000, 'deposit', '2025-01-06 3:00:34'),
+(2002, 3, 3400, 'withdrawal', '2025-01-11 04:02:34'),
+(2003, 4, 234500, 'deposit', '2025-01-22 08:57:23'),
+(2004, 5, 21000, 'deposit', '2025-01-20 03:21:04');
 
 -- +goose Down
 DROP TABLE IF EXISTS customers;

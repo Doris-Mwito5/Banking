@@ -39,6 +39,7 @@ func (s *accountService) CreateAccount(
 		AccountType: request.AccountType,
 		CreatedAt:   time.Now(),
 		Status:      request.Status,
+		Amount: request.Amount,
 	}
 	newAccount, err := s.repo.Save(account)
 	if err != nil {

@@ -4,30 +4,18 @@ import (
 	"database/sql"
 	"github/Doris-Mwito5/banking/errors"
 	"github/Doris-Mwito5/banking/logger"
-	"log"
 )
 
 type accountRepoDb struct {
 	db *sql.DB
 }
 
-func NewaccountRepoDb() *accountRepoDb {
-	//db connection
-	connStr := "user=root dbname=postgres sslmode=disable password=random123 host=localhost port=5434"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//check if the db connection is active
-	err = db.Ping()
-	if err != nil {
-		log.Fatalf("Error pinging database: %v", err)
-	}
-	return &accountRepoDb{db}
+func NewaccountRepoDb(db *sql.DB) *accountRepoDb {
+	return &accountRepoDb{db: db}
 }
 
 func (d *accountRepoDb) GetAllAccounts() ([]Account, *errors.AppError) {
-	getAllAccountsSQL := `SELECT id, customer_id, account_type, created_at, status FROM accounts`
+	getAllAccountsSQL := `SELECT id, customer_id, account_type, pin, created_at, status, amount FROM accounts`
 	rows, err := d.db.Query(getAllAccountsSQL)
 	if err != nil {
 		logger.Error("error querying accounts")
@@ -40,9 +28,11 @@ func (d *accountRepoDb) GetAllAccounts() ([]Account, *errors.AppError) {
 		err := rows.Scan(
 			&account.ID,
 			&account.CustomerID,
+			&account.Pin,
 			&account.AccountType,
 			&account.CreatedAt,
 			&account.Status,
+			&account.Amount,
 		)
 		if err != nil {
 			logger.Error("scan row err")
@@ -54,26 +44,50 @@ func (d *accountRepoDb) GetAllAccounts() ([]Account, *errors.AppError) {
 }
 
 func (d *accountRepoDb) Save(a Account) (*Account, *errors.AppError) {
-    createAccountSQL := `INSERT INTO accounts (customer_id, account_type, created_at, status) 
-                         VALUES($1, $2, $3, $4) RETURNING id`
+	createAccountSQL := `INSERT INTO accounts (customer_id, pin, account_type, created_at, status, amount) 
+                         VALUES($1, $2, $3, $4, $5, $6) RETURNING id`
 
-    // Execute the SQL query and scan the resulting id into a.ID
-    err := d.db.QueryRow(
-        createAccountSQL,
-        a.CustomerID,
-        a.AccountType,
-        a.CreatedAt,
-        a.Status,
-    ).Scan(&a.ID)
+	err := d.db.QueryRow(
+		createAccountSQL,
+		a.CustomerID,
+		a.Pin,
+		a.AccountType,
+		a.CreatedAt,
+		a.Status,
+		a.Amount,
+	).Scan(&a.ID)
 
-    // Check for errors and log them with more details
-    if err != nil {
-        // Log the actual error from the database for better debugging
-        logger.Error("error creating account: %+v")
-        return nil, errors.NewUnexpectedError("failed to create account: " + err.Error())
-    }
+	if err != nil {
+		logger.Error("error creating account: %+v")
+		return nil, errors.NewUnexpectedError("failed to create account: " + err.Error())
+	}
 
-    // Return the account with the assigned ID
-    return &a, nil
+	return &a, nil
 }
 
+func (d *accountRepoDb) GetAccountByID(ID int64) (*Account, *errors.AppError) {
+	getAccountByIDSQL := `SELECT customer_id, pin, account_type, created_at, amount, status FROM accounts WHERE ID = $1`
+
+	row := d.db.QueryRow(
+		getAccountByIDSQL,
+		ID,
+	)
+	var a Account
+	err := row.Scan(
+		&a.CustomerID,
+		&a.Pin,
+		&a.AccountType,
+		&a.CreatedAt,
+		&a.Amount,
+		&a.Status,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.NewNotFoundError("account not found")
+		} else {
+			logger.Error("scanning row error: %v")
+			return nil, errors.NewUnexpectedError("Unexpected database error")
+		}
+	}
+	return &a, nil
+}
